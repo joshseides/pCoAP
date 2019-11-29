@@ -34,6 +34,7 @@ class Code(ExtensibleIntEnum):
     FETCH = 5
     PATCH = 6
     iPATCH = 7
+    PARALLELIZE = 8
     CREATED = 65
     DELETED = 66
     VALID = 67

@@ -120,7 +120,7 @@ class Resource(_ExposesWellknownAttributes, interfaces.Resource):
             response = message.Message(no_response=26)
 
         if response.code is None:
-            if request.code in (numbers.codes.GET, numbers.codes.FETCH):
+            if request.code in (numbers.codes.GET, numbers.codes.FETCH, numbers.codes.PARALLELIZE):
                 response_default = numbers.codes.CONTENT
             elif request.code == numbers.codes.DELETE:
                 response_default = numbers.codes.DELETED

@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 async def main():
     protocol = await Context.create_client_context()
 
-    request = Message(code=GET, uri='coap://127.0.0.1/time')
+    request = Message(code=PARALLELIZE, uri='coap://127.0.0.1/time')
 
     try:
         response = await protocol.request(request).response

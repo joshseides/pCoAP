@@ -90,8 +90,14 @@ class TimeResource(resource.ObservableResource):
             self.handle = None
 
     async def render_get(self, request):
+        print("HMM22")
         payload = datetime.datetime.now().\
                 strftime("%Y-%m-%d %H:%M").encode('ascii')
+        return aiocoap.Message(payload=payload)
+
+    async def render_parallelize(self, request):
+        print("HMM")
+        payload = "cannot really parallelize this".encode('ascii')
         return aiocoap.Message(payload=payload)
 
 # logging setup
