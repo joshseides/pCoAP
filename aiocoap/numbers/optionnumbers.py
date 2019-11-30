@@ -43,6 +43,8 @@ from .. import optiontypes
 # |  35 | x | x | - |   | Proxy-Uri      | string     | 1-1034 | (none)      |
 # |  39 | x | x | - |   | Proxy-Scheme   | string     | 1-255  | (none)      |
 # |  60 |   |   | x |   | Size1          | uint       | 0-4    | (none)      |
+# |  61 |   |   | x |   | Blocking       | uint       | 0-1    | (none)      |
+# |  62 |   |   | x |   | Checksum       | uint       | 0-4    | (none)      |
 # +-----+---+---+---+---+----------------+------------+--------+-------------+
 #=============================================================================
 #
@@ -79,6 +81,8 @@ class OptionNumber(ExtensibleIntEnum):
     PROXY_URI = 35
     PROXY_SCHEME = 39
     SIZE1 = 60
+    BLOCKING = 61
+    CHECKSUM = 62
     NO_RESPONSE = 258
     OBJECT_SECURITY = 9
 
@@ -165,3 +169,8 @@ OptionNumber.NO_RESPONSE.format = optiontypes.UintOption
 # draft-ietf-core-object-security
 
 OptionNumber.OBJECT_SECURITY.format = optiontypes.OpaqueOption
+
+# pCoAP
+
+OptionNumber.BLOCKING.format = optiontypes.UintOption
+OptionNumber.CHECKSUM.format = optiontypes.UintOption

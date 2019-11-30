@@ -97,6 +97,7 @@ class TimeResource(resource.ObservableResource):
 
     async def render_parallelize(self, request):
         print("HMM")
+        print(request.opt)
         payload = "cannot really parallelize this".encode('ascii')
         return aiocoap.Message(payload=payload)
 

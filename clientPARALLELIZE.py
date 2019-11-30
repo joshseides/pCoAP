@@ -23,6 +23,8 @@ async def main():
     protocol = await Context.create_client_context()
 
     request = Message(code=PARALLELIZE, uri='coap://127.0.0.1/time')
+    request.opt.blocking = 1
+    request.opt.checksum = 5
 
     try:
         response = await protocol.request(request).response

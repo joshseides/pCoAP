@@ -206,3 +206,5 @@ class Options(object):
     max_age = _single_value_view(OptionNumber.MAX_AGE)
     if_match = _items_view(OptionNumber.IF_MATCH)
     no_response = _single_value_view(OptionNumber.NO_RESPONSE)
+    blocking = _single_value_view(OptionNumber.BLOCKING)
+    checksum = _single_value_view(OptionNumber.CHECKSUM)
