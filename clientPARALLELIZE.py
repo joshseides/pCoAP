@@ -17,12 +17,15 @@ import asyncio
 
 from aiocoap import *
 
+import json
+
 logging.basicConfig(level=logging.INFO)
 
 async def main():
     protocol = await Context.create_client_context()
 
-    request = Message(code=PARALLELIZE, uri='coap://127.0.0.1/time')
+    # add this client
+    request = Message(code=GET, uri='coap://127.0.0.1:5003/other/block')
     request.opt.blocking = 1
     request.opt.checksum = 5
 

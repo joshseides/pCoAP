@@ -417,6 +417,7 @@ class Site(interfaces.ObservableResource, PathCapable):
 
     # add member to parallelism entity with id entity
     def add_parallelism_entity_member(self, entity, member):
+        entity = str(entity)
         if entity not in self._parallelism_entities:
             raise KeyError("{} is not a parallelism entity key".format(entity))
 
@@ -424,6 +425,7 @@ class Site(interfaces.ObservableResource, PathCapable):
 
     # remove member from parallelism entity with key entity
     def remove_parallelism_entity_member(self, entity, member):
+        entity = str(entity)
         if entity not in self._parallelism_entities:
             raise KeyError("{} is not a parallelism entity key".format(entity))
 
@@ -444,7 +446,16 @@ class Site(interfaces.ObservableResource, PathCapable):
 
     # create a new paralleism entity starting with member
     def create_parallelism_entity(self, member):
-        self._parallelism_entities[self._parallelism_index] = set()
-        self._parallelism_entities[self._parallelism_index].add(member)
+        self._parallelism_entities[str(self._parallelism_index)] = set()
+        self._parallelism_entities[str(self._parallelism_index)].add(member)
         self._parallelism_index += 1
         return self._parallelism_index - 1
+
+    def all_parallelism_entities(self):
+        return self._parallelism_entities
+
+    def get_parallelism_entity_by_id(self, entity):
+        entity = str(entity)
+        if entity not in self._parallelism_entities:
+            raise KeyError("{} is not a parallelism entity key".format(entity))
+        return self._parallelism_entities[entity]
