@@ -44,7 +44,7 @@ class Registerer:
             link_source=None, registration_parameters={},
             loggername='coap-rd-registerer'):
         """Use a ``context`` to create a registration at the Resource
-        directiory at ``rd`` (defaulting to "find an RD yourself"; URIs should
+        directory at ``rd`` (defaulting to "find an RD yourself"; URIs should
         have no path component, unless the user wishes to sidestep the URI
         discovery step). It will be renewed every `lifetime` seconds.
 
