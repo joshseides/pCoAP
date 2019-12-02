@@ -25,17 +25,10 @@ async def main():
     protocol = await Context.create_client_context()
 
     # add this client
-    request = Message(code=GET, uri='coap://127.0.0.1:5003/other/block')
-    request.opt.blocking = 1
-    request.opt.checksum = 5
-
-    try:
-        response = await protocol.request(request).response
-    except Exception as e:
-        print('Failed to fetch resource:')
-        print(e)
-    else:
-        print('Result: %s\n%r'%(response.code, response.payload))
+    request = Message(code=GET, uri='coap://127.0.0.1:5000/parallelism-entity')
+    response = await protocol.request(request).response
+    entity = json.loads(response.payload.decode('ascii'))
+    print('Entity: {}'.format(entity))
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(main())

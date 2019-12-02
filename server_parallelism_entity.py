@@ -31,6 +31,10 @@ class ParallelismEntityResource(resource.Resource):
         super().__init__()
         self.root = root
 
+    async def render_get(self, request):
+        entity = list(self.root.get_parallelism_entity_by_id(0))
+        return aiocoap.Message(payload=json.dumps(entity).encode('ascii'))
+
     async def render_put(self, request):
         print('PUT payload: %s' % request.payload.decode('ascii'))
         payload = json.loads(request.payload.decode('ascii'))
