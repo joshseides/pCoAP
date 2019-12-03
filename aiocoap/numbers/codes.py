@@ -40,6 +40,7 @@ class Code(ExtensibleIntEnum):
     VALID = 67
     CHANGED = 68
     CONTENT = 69
+    COMPUTED = 70
     CONTINUE = 95
     BAD_REQUEST = 128
     UNAUTHORIZED = 129
