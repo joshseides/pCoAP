@@ -14,21 +14,33 @@ for some more information."""
 
 import logging
 import asyncio
-
 from aiocoap import *
-
 import json
+import time
+
 
 logging.basicConfig(level=logging.INFO)
+
+async def schedule_knn(address, port, protocol):
+    print("HMM", address, port)
+    request = Message(code=PARALLELIZE, uri='coap://{}:{}/knn'.format(address, port))
+    response = await protocol.request(request).response
+    print(response.payload.decode('ascii'))
 
 async def main():
     protocol = await Context.create_client_context()
 
-    # add this client
+    start = time.time()
+
+    # get worker nodes
     request = Message(code=GET, uri='coap://127.0.0.1:5000/parallelism-entity')
     response = await protocol.request(request).response
     entity = json.loads(response.payload.decode('ascii'))
-    print('Entity: {}'.format(entity))
+
+    # schedule requests on worker nodes
+    await asyncio.gather(*[schedule_knn(address, port, protocol) for address, port in entity])
+
+    print('TIME ELAPSED: {} seconds'.format(time.time() - start))
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(main())

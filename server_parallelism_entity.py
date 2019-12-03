@@ -27,20 +27,23 @@ class ParallelismEntityResource(resource.Resource):
     """Example resource which supports the GET and PUT methods. It sends large
     responses, which trigger blockwise transfer."""
 
-    def __init__(self, root):
+    def __init__(self, root, port):
         super().__init__()
         self.root = root
+        self.port = port
 
     async def render_get(self, request):
         entity = list(self.root.get_parallelism_entity_by_id(0))
-        return aiocoap.Message(payload=json.dumps(entity).encode('ascii'))
+        filtered_entity = [(address, port) for address, port in entity if port != self.port]
+        return aiocoap.Message(payload=json.dumps(filtered_entity).encode('ascii'))
 
     async def render_put(self, request):
         print('PUT payload: %s' % request.payload.decode('ascii'))
         payload = json.loads(request.payload.decode('ascii'))
         self.root.add_parallelism_entity_member(payload["entity"], (payload["address"], payload["port"]))
         entity = list(self.root.get_parallelism_entity_by_id(payload["entity"]))
-        return aiocoap.Message(code=aiocoap.CHANGED, payload=json.dumps(entity).encode('ascii'))
+        filtered_entity = [(address, port) for address, port in entity if port != self.port]
+        return aiocoap.Message(code=aiocoap.CHANGED, payload=json.dumps(filtered_entity).encode('ascii'))
 
 
 # logging setup
@@ -58,7 +61,7 @@ def main():
 
     root.add_resource(['.well-known', 'core'],
             resource.WKCResource(root.get_resources_as_linkheader))
-    root.add_resource(['parallelism-entity'], ParallelismEntityResource(root))
+    root.add_resource(['parallelism-entity'], ParallelismEntityResource(root, port))
 
     # set up server as parallelism directory
     root.set_up_as_parallelism_directory()

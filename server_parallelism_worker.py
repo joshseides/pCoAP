@@ -14,37 +14,24 @@ for some more information."""
 
 import datetime
 import logging
-
 import asyncio
-
 import aiocoap.resource as resource
 import aiocoap
-
 import json
+import time
+import sys
 
 
-class BlockResource(resource.Resource):
+class KNNResource(resource.Resource):
     """Example resource which supports the GET and PUT methods. It sends large
     responses, which trigger blockwise transfer."""
 
     def __init__(self):
         super().__init__()
-        self.set_content(b"This is the resource's default content. It is padded "\
-                b"with numbers to be large enough to trigger blockwise "\
-                b"transfer.\n")
 
-    def set_content(self, content):
-        self.content = content
-        while len(self.content) <= 1024:
-            self.content = self.content + b"0123456789\n"
-
-    async def render_get(self, request):
-        return aiocoap.Message(payload=self.content)
-
-    async def render_put(self, request):
-        print('PUT payload: %s' % request.payload)
-        self.set_content(request.payload)
-        return aiocoap.Message(code=aiocoap.CHANGED, payload=self.content)
+    async def render_parallelize(self, request):
+        time.sleep(1)
+        return aiocoap.Message(payload='this was an intense computation'.encode('ascii'))
 
 
 # logging setup
@@ -55,14 +42,14 @@ logging.getLogger("coap-server").setLevel(logging.DEBUG)
 async def setup(index):
     # set up address and port
     address = '127.0.0.1'
-    port = 5000 + index
+    port = 5000 + int(index)
 
     # Resource tree creation
     root = resource.Site()
 
     root.add_resource(['.well-known', 'core'],
             resource.WKCResource(root.get_resources_as_linkheader))
-    root.add_resource(['other', 'block'], BlockResource())
+    root.add_resource(['knn'], KNNResource())
 
     protocol = await asyncio.Task(aiocoap.Context.create_server_context(root, bind=('127.0.0.1', port)))
 
@@ -82,8 +69,9 @@ async def setup(index):
         print('Result: %s\n%r'%(response.code, json.loads(response.payload.decode('ascii'))))
 
 def main():
-    for i in range(1, 6):
-        asyncio.get_event_loop().run_until_complete(setup(i))
+    if len(sys.argv) < 2:
+        raise ValueError('Need second argument specifying 5000 + i port number index')
+    asyncio.get_event_loop().run_until_complete(setup(sys.argv[1]))
     asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":
