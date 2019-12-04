@@ -157,7 +157,7 @@ async def setup(port):
 
 def main():
     if len(sys.argv) < 2:
-        raise ValueError('Usage: ./simpong61 [PORT]')
+        raise ValueError('Usage: ./server_knn_parallelism_worker [PORT]')
 
     # wait for parallelism entity registration to complete
     asyncio.get_event_loop().run_until_complete(setup(sys.argv[1]))
