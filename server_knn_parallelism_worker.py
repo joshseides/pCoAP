@@ -26,21 +26,22 @@ from itertools import islice
 
 
 class KNNResource(resource.Resource):
-    """Example resource which supports the GET and PUT methods. It sends large
-    responses, which trigger blockwise transfer."""
+    """Resource managing KNN recommendation algorithm for movie-rating data."""
 
     def __init__(self):
         super().__init__()
+
+        # pre-process full data set
         self._load_movie_data()
 
     def _load_movie_data(self):
         # import movie data
-        movie_data = pd.read_csv("data/movies.csv",
+        movie_data = pd.read_csv("data/movies-small.csv",
             usecols=['movieId', 'title'],
             dtype={'movieId': 'int32', 'title': 'str'})
 
         # import corresponding ratings
-        rating_data = pd.read_csv("data/ratings.csv",
+        rating_data = pd.read_csv("data/ratings-small.csv",
             usecols=['userId', 'movieId', 'rating'],
             dtype={'userId': 'int32', 'movieId': 'int32', 'rating': 'float32'})
 
@@ -61,8 +62,11 @@ class KNNResource(resource.Resource):
 
         print("drop least active users")
 
-        # create movie vs user matrix for kNN computations
+        # create movie vs user matrix for KNN computations
         self.data = ratings_drop_movies_users.pivot(index='movieId', columns='userId', values='rating').fillna(0)
+
+        # reformat movie_data to be indexed on movie_id
+        movie_data = movie_data.set_index('movieId')
         self.movie_mapping = movie_data
 
     def _euclidean_distance(self, x, y):
@@ -70,48 +74,50 @@ class KNNResource(resource.Resource):
 
     async def render_parallelize(self, request):
         payload = json.loads(request.payload.decode('ascii'))
+
+        # load parameters
         num_recs = int(payload["num_recs"])
         movie_title = payload["movie_title"]
         index = int(payload["index"])
         length = int(payload["length"])
         print('PARALLELIZE payload: %s' % payload)
 
-        # get movie_id
-        movie_id = self.movie_mapping[self.movie_mapping["title"] == movie_title]["movieId"].values[0]
+        # get id for input movie
+        movie_id = self.movie_mapping[self.movie_mapping["title"] == movie_title].index[0]
+        print(movie_id)
         movie_data = self.data.loc[movie_id]
 
         # list to save all distances
         dists = []
 
-        # compute start and end indices
+        # compute start and end indices for this shard
         window_size = int(len(self.data) / length)
         start = window_size * index
         end = start + window_size if index < length - 1 else None
-        print(len(self.data), start, end, window_size, length)
 
+        # find euclidean distances for all movies in this shard
         for index, row in islice(self.data.iterrows(), start, end):
+            # skip over input movie
             if (str(index) != str(movie_id)):
                 dist = self._euclidean_distance(movie_data, row)
                 dists.append((index, dist))
 
         # sort distances in ascending order
-        print("DIST: ", len(dists))
         dists.sort(key=lambda x: x[1])
 
-        # trim to num_recs recommendations and drop first
+        # trim to num_recs recommendations
         top_movies = dists[:num_recs]
 
         # convert to string data type for json
         for i in range(len(top_movies)):
             movie_id = str(top_movies[i][0])
-            title = self.movie_mapping[self.movie_mapping["movieId"] == int(movie_id)]["title"].values[0]
+            title = self.movie_mapping.loc[top_movies[i][0]]["title"]
             dist = str(top_movies[i][1])
             top_movies[i] = (movie_id, title, dist)
 
         # create payload
         payload = json.dumps(top_movies).encode('ascii')
 
-        # time.sleep(1)
         return aiocoap.Message(code=aiocoap.COMPUTED, payload=payload)
 
 
@@ -120,12 +126,12 @@ class KNNResource(resource.Resource):
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("coap-server").setLevel(logging.DEBUG)
 
-async def setup(index):
+async def setup(port):
     # set up address and port
     address = '127.0.0.1'
-    port = 5000 + int(index)
+    port = int(port)
 
-    # Resource tree creation
+    # resource tree creation
     root = resource.Site()
 
     root.add_resource(['.well-known', 'core'],
@@ -134,25 +140,29 @@ async def setup(index):
 
     protocol = await asyncio.Task(aiocoap.Context.create_server_context(root, bind=('127.0.0.1', port)))
 
+    # create payload for parallelism entity registration
     payload = {"entity": 0, "address": address, "port": port}
     s_payload = json.dumps(payload).encode('ascii')
     uri = 'coap://127.0.0.1:5000/parallelism-entity'
 
-    # add this worker to parallelism entity
+    # add this worker to base parallelism entity (id 0)
     request = aiocoap.Message(code=aiocoap.PUT, payload=s_payload, uri=uri)
 
     try:
         response = await protocol.request(request).response
     except Exception as e:
-        print('Failed to fetch resource:')
-        print(e)
+        print('Failed to join parallelism entity')
     else:
         print('Result: %s\n%r'%(response.code, json.loads(response.payload.decode('ascii'))))
 
 def main():
     if len(sys.argv) < 2:
-        raise ValueError('Need second argument specifying 5000 + i port number index')
+        raise ValueError('Usage: ./simpong61 [PORT]')
+
+    # wait for parallelism entity registration to complete
     asyncio.get_event_loop().run_until_complete(setup(sys.argv[1]))
+
+    # listen for parallelism requests from clients
     asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":

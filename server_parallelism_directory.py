@@ -14,18 +14,14 @@ for some more information."""
 
 import datetime
 import logging
-
 import asyncio
-
 import aiocoap.resource as resource
 import aiocoap
-
 import json
 
 
 class ParallelismEntityResource(resource.Resource):
-    """Example resource which supports the GET and PUT methods. It sends large
-    responses, which trigger blockwise transfer."""
+    """Resource managing parallelism entities."""
 
     def __init__(self, root, port):
         super().__init__()
@@ -33,16 +29,25 @@ class ParallelismEntityResource(resource.Resource):
         self.port = port
 
     async def render_get(self, request):
+        # list of nodes in base parallelism entity
         entity = list(self.root.get_parallelism_entity_by_id(0))
+
+        # remove directory node
         filtered_entity = [(address, port) for address, port in entity if port != self.port]
+
         return aiocoap.Message(payload=json.dumps(filtered_entity).encode('ascii'))
 
     async def render_put(self, request):
         print('PUT payload: %s' % request.payload.decode('ascii'))
+
+        # parse arguments from payload
         payload = json.loads(request.payload.decode('ascii'))
         self.root.add_parallelism_entity_member(payload["entity"], (payload["address"], payload["port"]))
+
+        # get update list of entity members
         entity = list(self.root.get_parallelism_entity_by_id(payload["entity"]))
         filtered_entity = [(address, port) for address, port in entity if port != self.port]
+
         return aiocoap.Message(code=aiocoap.CHANGED, payload=json.dumps(filtered_entity).encode('ascii'))
 
 

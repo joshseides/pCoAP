@@ -21,15 +21,19 @@ import time
 
 logging.basicConfig(level=logging.INFO)
 
+num_recs = 5
+
 async def schedule_knn(address, port, protocol, index, length, res):
-    print("HMM", address, port)
-    body = {'num_recs': 5, 'movie_title': 'Pocahontas (1995)', 'index': index, 'length': length}
-    print("BODY: ", body)
+    # create request
+    body = {'num_recs': num_recs, 'movie_title': 'Pocahontas (1995)', 'index': index, 'length': length}
     payload = json.dumps(body).encode('ascii')
     request = Message(code=PARALLELIZE, payload=payload, uri='coap://{}:{}/knn'.format(address, port))
+
+    # send request to parallelism worker
     response = await protocol.request(request).response
     movies = json.loads(response.payload.decode('ascii'))
-    print("MOVIES: ", movies)
+
+    # concatenate top movie result from shard to result list
     res += movies
 
 async def main():
@@ -37,24 +41,27 @@ async def main():
 
     start = time.time()
 
-    # get worker nodes
+    # get active worker nodes
     request = Message(code=GET, uri='coap://127.0.0.1:5000/parallelism-entity')
     response = await protocol.request(request).response
     entity = json.loads(response.payload.decode('ascii'))
 
+    # result list for shard results
     res = []
 
-    # schedule requests on worker nodes
+    # schedule knn requests on worker nodes
     await asyncio.gather(*[
         schedule_knn(address, port, protocol, i, len(entity), res)
         for i, (address, port) in enumerate(entity)
     ])
 
-    # sort distances in ascending order
+    # sort movie distances in ascending order
     res.sort(key=lambda x: float(x[2]))
 
-    print("YOUR RECOMMENDATIONS: ", res[:5])
+    # return top 5 movie recommendations
+    print("YOUR RECOMMENDATIONS: ", res[:num_recs])
 
+    # measure computation speed
     print('TIME ELAPSED: {} seconds'.format(time.time() - start))
 
 if __name__ == "__main__":
