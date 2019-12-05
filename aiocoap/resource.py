@@ -409,3 +409,53 @@ class Site(interfaces.ObservableResource, PathCapable):
                 for l in resource.get_resources_as_linkheader().links:
                     links.append(Link('/' + '/'.join(path) + l.href, l.attr_pairs))
         return LinkFormat(links)
+
+    # designate this resource as a parallelism directory
+    def set_up_as_parallelism_directory(self):
+        self._parallelism_index = 0
+        self._parallelism_entities = {}
+
+    # add member to parallelism entity with id entity
+    def add_parallelism_entity_member(self, entity, member):
+        entity = str(entity)
+        if entity not in self._parallelism_entities:
+            raise KeyError("{} is not a parallelism entity key".format(entity))
+
+        self._parallelism_entities[entity].add(member)
+
+    # remove member from parallelism entity with key entity
+    def remove_parallelism_entity_member(self, entity, member):
+        entity = str(entity)
+        if entity not in self._parallelism_entities:
+            raise KeyError("{} is not a parallelism entity key".format(entity))
+
+        if member not in self._parallelism_entities[entity]:
+            raise ValueError("{} is not a member of parallelism entity {}".format(member, entity))
+
+        self._parallelism_entities[entity].remove(member)
+
+    # return all parallelism entity ids that member is part of
+    def find_parallelism_entities_for_member(self, member):
+        return [entity for entity in self._parallelism_entities if member in entity]
+
+    # remove member from all associated parallelism entities
+    def shut_down_parallelism_entity_member(self, member):
+        for entity in self._parallelism_entities:
+            if member in entity:
+                entity.remove(member)
+
+    # create a new paralleism entity starting with member
+    def create_parallelism_entity(self, member):
+        self._parallelism_entities[str(self._parallelism_index)] = set()
+        self._parallelism_entities[str(self._parallelism_index)].add(member)
+        self._parallelism_index += 1
+        return self._parallelism_index - 1
+
+    def all_parallelism_entities(self):
+        return self._parallelism_entities
+
+    def get_parallelism_entity_by_id(self, entity):
+        entity = str(entity)
+        if entity not in self._parallelism_entities:
+            raise KeyError("{} is not a parallelism entity key".format(entity))
+        return self._parallelism_entities[entity]

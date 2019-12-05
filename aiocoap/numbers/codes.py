@@ -40,6 +40,7 @@ class Code(ExtensibleIntEnum):
     VALID = 67
     CHANGED = 68
     CONTENT = 69
+    COMPUTED = 70
     CONTINUE = 95
     BAD_REQUEST = 128
     UNAUTHORIZED = 129
@@ -88,7 +89,7 @@ class Code(ExtensibleIntEnum):
     def can_have_payload(self):
         """True if a message with that code can carry a payload. This is not
         checked for strictly, but used as an indicator."""
-        return self.is_response() or self in (self.POST, self.PUT, self.FETCH, self.PATCH, self.iPATCH)
+        return self.is_response() or self in (self.POST, self.PUT, self.FETCH, self.PATCH, self.iPATCH, self.PARALLELIZE)
 
     @property
     def class_(self):
